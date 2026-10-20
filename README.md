@@ -46,9 +46,19 @@ Our house language is Polish with swearing. Rough translations, so you know what
 
 ## Log: things we figured out
 
-Newest first. Real problems, real fixes, no fluff.
+Newest first. Real problems we hit while building, and what actually fixed them.
 
-- **2026-10-20 · claude.ai:** partner plugins you never installed (ZoomInfo, Small Business, CockroachDB…) can't be removed. "Remove" says done, then the server quietly puts them back. Workaround: remove the default *Knowledge Work* marketplace for your account. [Steps + code](https://github.com/anthropics/claude-code/issues/98894#issuecomment-6297257907)
+- **2026-10-20 · claude.ai plugins.** Partner plugins you never installed (ZoomInfo, Small Business, CockroachDB…) can't be removed: "Remove" says done, then the server quietly puts them back. Workaround: remove the default *Knowledge Work* marketplace for your account. [Steps + code](https://github.com/anthropics/claude-code/issues/98894#issuecomment-6297257907). Confirmed on Windows and Linux by [@dmzi](https://github.com/anthropics/claude-code/issues/98894#issuecomment-6298969061), who also found the undo: `{"subscription":"added"}`. First entry, first person helped.
+- **2026-10-15 · "The site lags with a mouse on a MacBook."** It wasn't performance (frames were steady at ~16.8 ms). The macOS mouse wheel scrolls in ~100 px jumps with no animation, so every scroll-linked effect jumps with it. Fix: smooth the wheel only for `pointer: fine`, leave touch alone. Testing trap: headless Chrome with `deviceScaleFactor: 2` reports half the `deltaY`.
+- **2026-10-13 · Supabase Edge Functions freeze for 3–150 s.** Timers and network go silent together, it comes in waves, and it isn't your code. Measure with a separate probe function before you "fix" anything, then retry slow reads through a second HTTP client or route.
+- **2026-09-30 · `node --check` is not a test.** It passes a `const` used before its declaration, duplicate declarations after gluing modules into one file, and a `.ts` file with imports on Node 24 (it checks nothing at all). Use `esbuild` for TypeScript and make one real request after every deploy.
+- **2026-09-29 · Supabase Auth without your own SMTP.** The built-in mailer only delivers to members of your Supabase team. Customers never get the password reset, and your tests pass because you test with your own address. Fix: set up your own SMTP, or send the recovery link from your own function.
+- **2026-09-28 · A Supabase secret bumps every function's version.** Setting or deleting one project secret gave all 125 edge functions +1 version: same code, same `updated_at`. A new version number doesn't mean someone deployed.
+- **2026-09-11 · The Netlify API caps file lists at 100.** `GET /deploys/{id}/files` returns at most 100 entries, even with `per_page=500`, and says nothing. Build a partial deploy from that list and everything after file 100 disappears from your site. Always paginate.
+- **2026-09-08 · `JSON.stringify` silently drops functions.** A dictionary with function values reached the browser half empty: "x is not a function". Worse, one shared `catch` for fetching and rendering showed it as "No connection".
+- **2026-09-07 · Instagram's in-app browser breaks `svh`.** It resizes the *layout* viewport whenever its bar hides (Safari and Chrome only move the visual viewport), so `svh`/`vh` heights jump by hundreds of pixels. Fix: measure the height once in px and set a CSS variable before the first paint.
+- **2026-09-07 · `ok: true` is not proof of a save.** A Postgres function with an explicit column list silently skipped columns added later: no error, API said `ok: true`, emails went out, and the field stayed empty. The proof is reading the field back.
+- **2026-09-01 · Supabase Storage can serve the old file right after an upsert.** HTTP 200, same size, no change. Re-fetch with a cache-buster and give it ~4 s before you call it a failed write.
 
 ---
 <sub>Log kept by Kodzior. Approved by Dawid, with one word.</sub>
